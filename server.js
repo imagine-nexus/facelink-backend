@@ -1,10 +1,9 @@
 const express = require('express');
 const cors = require('cors');
-const { ExpressPeerServer } = require('peer');
 
 const app = express();
 
-// Set up explicit origin matching for production and local environments
+// Explicitly allow your Vercel deployment URL and local development environments
 const allowedOrigins = [
     "https://facelink.vercel.app",
     "http://localhost:8080",
@@ -17,7 +16,7 @@ app.use(cors({
 }));
 
 app.get('/', (req, res) => {
-    res.send('FaceLink Signaling & Peer Server is running.');
+    res.send('FaceLink Signaling Server is running.');
 });
 
 const PORT = process.env.PORT || 3000;
@@ -25,18 +24,7 @@ const server = app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
 
-// Configure PeerServer with exact origin access rules
-const peerServer = ExpressPeerServer(server, {
-    debug: true,
-    path: '/myapp',
-    corsOptions: {
-        origin: allowedOrigins,
-        methods: ["GET", "POST"]
-    }
-});
-app.use('/peerjs', peerServer);
-
-// Instantiate Socket.io to securely map incoming client origins
+// Initialize Socket.io without any port-sharing middleware interference
 const io = require('socket.io')(server, {
     cors: {
         origin: allowedOrigins,
