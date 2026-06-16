@@ -3,7 +3,18 @@ const cors = require('cors');
 const { ExpressPeerServer } = require('peer');
 
 const app = express();
-app.use(cors());
+
+// Set up explicit origin matching for production and local environments
+const allowedOrigins = [
+    "https://facelink.vercel.app",
+    "http://localhost:8080",
+    "http://127.0.0.1:8080"
+];
+
+app.use(cors({
+    origin: allowedOrigins,
+    credentials: true
+}));
 
 app.get('/', (req, res) => {
     res.send('FaceLink Signaling & Peer Server is running.');
@@ -14,16 +25,23 @@ const server = app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
 
+// Configure PeerServer with exact origin access rules
 const peerServer = ExpressPeerServer(server, {
     debug: true,
-    path: '/myapp'
+    path: '/myapp',
+    corsOptions: {
+        origin: allowedOrigins,
+        methods: ["GET", "POST"]
+    }
 });
 app.use('/peerjs', peerServer);
 
+// Instantiate Socket.io to securely map incoming client origins
 const io = require('socket.io')(server, {
     cors: {
-        origin: "*", 
-        methods: ["GET", "POST"]
+        origin: allowedOrigins,
+        methods: ["GET", "POST"],
+        credentials: true
     }
 });
 
@@ -32,7 +50,6 @@ io.on('connection', (socket) => {
         socket.join(roomId);
         socket.to(roomId).emit('user-connected', userId, userName);
 
-        // Listen for chat messages sent from this client and broadcast them to the room
         socket.on('send-chat-message', (messageText) => {
             socket.to(roomId).emit('receive-chat-message', {
                 text: messageText,
