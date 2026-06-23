@@ -2,29 +2,29 @@ const express = require('express');
 const cors = require('cors');
 
 const app = express();
+const PORT = process.env.PORT || 3000;
 
-// Explicitly allow your Vercel deployment URL and local development environments
+// Dynamic international origins array
 const allowedOrigins = [
+    process.env.FRONTEND_URL, 
     "https://facelink.vercel.app",
     "http://localhost:8080",
     "http://127.0.0.1:8080"
-];
+].filter(Boolean);
 
 app.use(cors({
     origin: allowedOrigins,
     credentials: true
 }));
 
-app.get('/', (req, res) => {
-    res.send('FaceLink Signaling Server is running.');
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: "healthy", timestamp: new Date() });
 });
 
-const PORT = process.env.PORT || 3000;
 const server = app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`[Production] Signaling gateway active on port ${PORT}`);
 });
 
-// Initialize Socket.io without any port-sharing middleware interference
 const io = require('socket.io')(server, {
     cors: {
         origin: allowedOrigins,
